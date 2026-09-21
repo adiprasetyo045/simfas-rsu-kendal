@@ -16,7 +16,7 @@ class AuthController extends Controller
     public function showLogin()
     {
         if (Auth::check()) {
-            return $this->redirectByRole(Auth::user());
+            return redirect()->intended($this->getDashboardUrl(Auth::user()));
         }
 
         return view('auth.login');
@@ -59,7 +59,7 @@ class AuthController extends Controller
 
             RateLimiter::clear($throttleKey);
 
-            return $this->redirectByRole($user);
+            return redirect()->intended($this->getDashboardUrl($user));
         }
 
         RateLimiter::hit($throttleKey, 60); // Lock for 60 seconds after 5 fails
@@ -82,16 +82,16 @@ class AuthController extends Controller
     }
 
     /**
-     * Redirect user to their role-specific dashboard
+     * Get user's role-specific dashboard URL
      */
-    protected function redirectByRole($user)
+    protected function getDashboardUrl($user)
     {
         return match ($user->role?->name) {
-            'admin' => redirect()->route('admin.dashboard'),
-            'pelapor' => redirect()->route('reporter.dashboard'),
-            'teknisi' => redirect()->route('technician.dashboard'),
-            'supervisor' => redirect()->route('admin.dashboard'),
-            default => redirect()->route('login'),
+            'admin' => route('admin.dashboard'),
+            'pelapor' => route('reporter.dashboard'),
+            'teknisi' => route('technician.dashboard'),
+            'supervisor' => route('admin.dashboard'),
+            default => route('login'),
         };
     }
 }
