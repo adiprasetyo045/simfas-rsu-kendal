@@ -31,6 +31,10 @@ body {
     font-size: 0.9rem;
 }
 
+body.sidebar-open {
+    overflow: hidden;
+}
+
 a { text-decoration: none; }
 a:hover { text-decoration: none; }
 
@@ -46,6 +50,8 @@ a:hover { text-decoration: none; }
     z-index: 1050;
     transition: var(--transition);
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     display: flex;
     flex-direction: column;
 }

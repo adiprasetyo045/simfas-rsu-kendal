@@ -1,135 +1,179 @@
-# Dokumentasi Perancangan Sistem (SIMFAS)
+# Dokumentasi Diagram Sistem (SIMFAS)
 
-Dokumen ini berisi diagram-diagram perancangan sistem yang sangat cocok untuk dimasukkan ke dalam laporan tugas akhir, makalah, atau presentasi Anda.
+Dokumen ini berisi kumpulan kode diagram (Mermaid) yang bisa Anda salin untuk men-generate gambar arsitektur sistem secara otomatis.
 
-Anda dapat melihat gambar diagram ini secara langsung dengan meng-copy kodenya dan mem-pastenya di web [Mermaid Live Editor](https://mermaid.live/) atau meng-upload file ini ke GitHub.
+---
 
-## 1. Diagram Use Case (Hak Akses Pengguna)
-Diagram ini menjelaskan apa saja yang bisa dilakukan oleh masing-masing pengguna di dalam sistem.
+## 1. Use Case Diagram
+Menggambarkan interaksi hak akses antara sistem dengan aktor (Pelapor, Teknisi, Admin, Supervisor).
 
 ```mermaid
 flowchart LR
-    %% Definisi Aktor
-    P[Pelapor / Perawat]
-    A[Administrator / Supervisor]
-    T[Teknisi]
+    %% Actors
+    Pelapor((Pelapor / Perawat))
+    Teknisi((Teknisi))
+    Admin((Administrator))
+    Supervisor((Supervisor / Manajemen))
 
-    %% Sistem Boundary
-    subgraph Sistem Manajemen Fasilitas Rumah Sakit
-        %% Use Case Pelapor
-        UC1(Buat Laporan Kerusakan)
-        UC2(Pantau Status Laporan)
+    %% Use Cases
+    subgraph Sistem SIMFAS
+        UC1(Login Sistem)
         
-        %% Use Case Admin
-        UC3(Kelola Data Master Ruangan & Fasilitas)
-        UC4(Verifikasi Laporan Masuk)
-        UC5(Tugaskan Teknisi)
-        UC6(Cetak Rekap Laporan PDF/Excel)
+        UC2(Buat Tiket Laporan)
+        UC2_1(Scan QR Code)
         
-        %% Use Case Teknisi
-        UC7(Ubah Status Shift / Jam Kerja)
-        UC8(Terima & Lihat Tugas)
-        UC9(Update Progress Pekerjaan & Foto)
+        UC3(Pantau Status Tiket)
+        UC4(Lihat Tugas Perbaikan)
+        UC5(Update Progres & Foto)
+        UC6(Kelola Data Master)
+        UC7(Assign Teknisi)
+        UC8(Cetak Rekap PDF)
+        
+        UC9(Ubah Status Shift)
     end
 
-    %% Hubungan Aktor ke Use Case
-    P --> UC1
-    P --> UC2
+    %% Actor to Use Case Associations
+    Pelapor --> UC1
+    Pelapor --> UC2
+    Pelapor --> UC3
 
-    A --> UC3
-    A --> UC4
-    A --> UC5
-    A --> UC6
-    A --> UC2
+    Teknisi --- UC1
+    Teknisi --- UC4
+    Teknisi --- UC5
+    Teknisi --- UC9
 
-    T --> UC7
-    T --> UC8
-    T --> UC9
+    Admin --> UC1
+    Admin --> UC6
+    Admin --> UC7
+    Admin --> UC8
+    Admin --> UC3
+
+    Supervisor --> UC1
+    Supervisor --> UC3
+    Supervisor --> UC8
+
+    %% Include and Extend Relationships (UML Standard)
+    UC2 -.->|<<extend>>| UC2_1
+    UC2 -.->|<<include>>| UC1
+    UC4 -.->|<<include>>| UC1
+    UC6 -.->|<<include>>| UC1
+    UC8 -.->|<<include>>| UC1
 ```
 
 ---
 
-## 2. Entity Relationship Diagram (ERD) / Relasi Database
-Diagram ini menjelaskan struktur dan hubungan antar tabel di dalam database MySQL sistem kita.
+## 2. Entity Relationship Diagram (ERD)
+Menggambarkan kerangka tabel database dan relasi antar Foreign Key.
 
 ```mermaid
 erDiagram
-    USERS ||--o{ REPORTS : "membuat"
-    USERS ||--o{ ASSIGNMENTS : "mengerjakan"
-    ROLES ||--o{ USERS : "memiliki"
-    ROOMS ||--o{ FACILITIES : "berisi"
-    ROOMS ||--o{ REPORTS : "lokasi kerusakan"
-    CATEGORIES ||--o{ REPORTS : "kategori"
-    FACILITIES ||--o{ REPORTS : "terkait dengan"
-    REPORTS ||--o{ REPORT_IMAGES : "memiliki bukti"
-    REPORTS ||--o{ STATUS_HISTORIES : "riwayat"
-    REPORTS ||--o| ASSIGNMENTS : "ditugaskan ke"
-    ASSIGNMENTS ||--o{ PROGRESS_HISTORIES : "catatan progress"
-
-    USERS {
+    users {
         bigint id PK
-        bigint role_id FK
         string name
         string email
-        string password
+        bigint role_id FK
+        boolean is_active
         boolean is_on_shift
     }
-    
-    REPORTS {
+    roles {
         bigint id PK
-        bigint user_id FK
+        string name
+    }
+    rooms {
+        bigint id PK
+        string name
+        string building
+    }
+    categories {
+        bigint id PK
+        string name
+    }
+    facilities {
+        bigint id PK
+        string code
+        string name
         bigint room_id FK
         bigint category_id FK
-        bigint facility_id FK
-        string ticket_number
-        string status
-        string priority
-        text description
-        datetime reported_at
     }
-
-    ASSIGNMENTS {
+    reports {
+        bigint id PK
+        string ticket_number
+        bigint user_id FK "Pelapor"
+        bigint facility_id FK
+        string priority
+        string status
+    }
+    report_images {
         bigint id PK
         bigint report_id FK
-        bigint technician_id FK
-        datetime estimated_start
-        datetime estimated_completion
-        datetime actual_completion
-        int latest_progress
+        string image_path
     }
+    assignments {
+        bigint id PK
+        bigint report_id FK
+        bigint technician_id FK "Teknisi"
+        bigint assigned_by FK "Admin"
+    }
+    progress_histories {
+        bigint id PK
+        bigint assignment_id FK
+        text note
+    }
+    status_histories {
+        bigint id PK
+        bigint report_id FK
+        string old_status
+        string new_status
+    }
+    notifications {
+        bigint id PK
+        bigint user_id FK
+        string title
+        boolean is_read
+    }
+
+    roles ||--o{ users : "memiliki"
+    rooms ||--o{ facilities : "menampung"
+    categories ||--o{ facilities : "mengelompokkan"
+    users ||--o{ reports : "membuat"
+    facilities ||--o{ reports : "dilaporkan di"
+    reports ||--o{ report_images : "lampiran foto"
+    reports ||--o| assignments : "ditugaskan ke"
+    users ||--o{ assignments : "diberi tugas"
+    assignments ||--o{ progress_histories : "catatan progres"
+    reports ||--o{ status_histories : "riwayat status"
+    users ||--o{ notifications : "menerima"
 ```
 
 ---
 
-## 3. Flowchart Alur Sistem (Proses Bisnis)
-Diagram ini menjelaskan perjalanan pelaporan kerusakan dari awal ditemukan sampai selesai diperbaiki.
+## 3. Alur Kerja Sistem (Activity Diagram / Flowchart)
+Menggambarkan tahapan logis pelaporan dari awal ditemukan sampai diperbaiki.
 
 ```mermaid
 flowchart TD
-    Start([Pelapor Menemukan Kerusakan]) --> LoginPelapor[Pelapor Buka Web & Login]
-    LoginPelapor --> IsiForm[Isi Form Kerusakan & Upload Foto]
-    IsiForm --> StatusMenunggu[Status: Menunggu Verifikasi]
+    Start([Mulai: Kerusakan Ditemukan]) --> A[Perawat Memindai QR Code Fasilitas]
+    A --> B{Apakah Sudah Login?}
+    B -- Belum --> C[Halaman Login]
+    C --> D[Redirect ke Form Laporan]
+    B -- Sudah --> D
     
-    StatusMenunggu --> NotifAdmin((Notifikasi Lonceng ke Admin))
-    NotifAdmin --> LoginAdmin[Admin Buka Dashboard]
-    LoginAdmin --> CekValid{Apakah Laporan Valid?}
+    D --> E[Isi Deskripsi, Prioritas & Foto Bukti]
+    E --> F[Submit Laporan]
+    F --> G[Sistem Generate Nomor Tiket]
+    G --> H[(Database)]
+    G --> I[Kirim Notifikasi Lonceng ke Admin]
     
-    CekValid -- Tidak --> Ditolak[Admin Menolak Laporan]
-    Ditolak --> StatusDitolak[Status: Ditolak]
-    StatusDitolak --> End([Selesai])
+    I --> J[Admin Cek Dashboard & Daftar Tiket]
+    J --> K[Admin Pilih Teknisi yang Sedang Shift]
+    K --> L[Admin Melakukan Penugasan / Assignment]
+    L --> M[Kirim Notifikasi ke Teknisi]
     
-    CekValid -- Ya --> Tugaskan[Admin Memilih Teknisi & Estimasi Waktu]
-    Tugaskan --> StatusDitugaskan[Status: Ditugaskan]
+    M --> N[Teknisi Menuju Lokasi Kerusakan]
+    N --> O[Teknisi Mengerjakan Perbaikan]
+    O --> P[Teknisi Ubah Status Menjadi SELESAI]
+    P --> Q[Teknisi Upload Foto Hasil & Catatan]
     
-    StatusDitugaskan --> NotifTeknisi((Notifikasi ke Teknisi))
-    NotifTeknisi --> BukaTugas[Teknisi Mengecek Detail Tugas]
-    BukaTugas --> MulaiKerja[Teknisi Menuju Lokasi Kerusakan]
-    MulaiKerja --> UpdateProgress[Teknisi Update Progress Berkala]
-    UpdateProgress --> StatusDiproses[Status: Diproses]
-    
-    StatusDiproses --> SelesaiKerja[Teknisi Meng-upload Bukti Selesai]
-    SelesaiKerja --> StatusSelesai[Status: Selesai]
-    
-    StatusSelesai --> NotifAkhir((Notifikasi ke Admin & Pelapor))
-    NotifAkhir --> Cetak[Admin Dapat Mencetak Laporan PDF di Akhir Bulan]
+    Q --> R[Kirim Notifikasi ke Admin & Pelapor]
+    R --> S([Selesai: Laporan Ditutup])
 ```

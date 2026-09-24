@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
         sidebarToggle.addEventListener('click', () => {
             sidebar.classList.toggle('show');
             overlay.classList.toggle('show');
+            document.body.classList.toggle('sidebar-open');
         });
     }
 
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
         overlay.addEventListener('click', () => {
             sidebar.classList.remove('show');
             overlay.classList.remove('show');
+            document.body.classList.remove('sidebar-open');
         });
     }
 
